@@ -439,11 +439,11 @@ function curPos(){
 }
 
 // ─── DATA ───
-function getW(wk){return WK[wk-1];}
-function stepsM(wk,di){return getW(wk).m[di]||[];}
-function stepsE(wk,di){return getW(wk).e[di]||[];}
-function dayTypeM(wk,di){return getW(wk).mt[di]||'';}
-function dayTypeE(wk,di){return getW(wk).et[di]||'';}
+function getW(wk){return wk==='maint'?MAINT:WK[wk-1];}
+function stepsM(wk,di){return wk==='maint'?stepsM_maint(di):(getW(wk).m[di]||[]);}
+function stepsE(wk,di){return wk==='maint'?stepsE_maint(di):(getW(wk).e[di]||[]);}
+function dayTypeM(wk,di){return wk==='maint'?MAINT.mt[di]:(getW(wk).mt[di]||'');}
+function dayTypeE(wk,di){return wk==='maint'?MAINT.et[di]:(getW(wk).et[di]||'');}
 // Maintenance: use week 10 or 11 data
 function maintWk(){return 'maint';}
 function stepsM_maint(di){return MAINT.m[di]||[];}
@@ -459,8 +459,9 @@ function dayTypeEx(wk,di){return wk==='maint'?MAINT.et[di]:dayTypeE(wk,di);}
 function dayDurX(wk,di){return wk==='maint'?(MAINT.md&&MAINT.md[di]||''):dayDur(wk,di);}
 function isNewProd(wk,prod){const list=NP[String(wk)];return list?list.includes(prod):false;}
 function getPhase(wk){return PHASES.find(p=>p.w.includes(wk))||PHASES[0];}
-function dayDur(wk,di){return getW(wk).md?.[di]||'';}
+function dayDur(wk,di){return wk==='maint'?(MAINT.md&&MAINT.md[di]||''):(getW(wk).md?.[di]||'');}
 function dayHasNew(wk,di){
+  if(wk==='maint')return false;
   return stepsM(wk,di).some(s=>isNewProd(wk,s.p))||stepsE(wk,di).some(s=>isNewProd(wk,s.p));
 }
 
@@ -474,7 +475,9 @@ function progWeek(wk){
   return Math.round(d/14*100);
 }
 function progDay(wk,di){
-  const sm=stepsM(wk,di),se=stepsE(wk,di),total=sm.length+se.length;
+  const sm=wk==='maint'?stepsM_maint(di):stepsM(wk,di);
+  const se=wk==='maint'?stepsE_maint(di):stepsE(wk,di);
+  const total=sm.length+se.length;
   if(!total)return 0;
   let done=0;
   const k=`w${wk}d${di}`;
@@ -610,7 +613,7 @@ function renderDay(){
   const{w:wkRaw,d:di}=S.selDay;
   const wk=wkRaw==='maint'?maintWk():wkRaw;
   const isMaintDay=wkRaw==='maint';
-  const mt=dayTypeM(wk,di),et=dayTypeE(wk,di);
+  const mt=dayTypeMx(wkRaw,di),et=dayTypeEx(wkRaw,di);
   const date=dateFor(wk,di);
   const dateStr=date?date.toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'}):isMaintDay?`${DAY_HE[di]} · שגרה קבועה`:`שבוע ${wk}, יום ${di+1}`;
   const hasNew=!isMaintDay&&dayHasNew(wk,di);
@@ -677,9 +680,10 @@ function renderDay(){
 function setDayTab(t){S.dayTab=t;render();}
 
 function calcSessPct(wk,di,sess){
-  const steps=sess==='m'?stepsM(wk,di):stepsE(wk,di);
+  const steps=wk==='maint'?(sess==='m'?stepsM_maint(di):stepsE_maint(di)):(sess==='m'?stepsM(wk,di):stepsE(wk,di));
   if(!steps.length)return 0;
-  const k=`w${wk}d${di}`;
+  const effWk=wk==='maint'?'maint':wk;
+  const k=`w${effWk}d${di}`;
   const done=steps.filter((_,i)=>S.ds[`${k}_${sess}_${i}`]).length;
   return Math.round(done/steps.length*100);
 }
