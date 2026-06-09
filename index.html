@@ -534,22 +534,22 @@ function setMaint(mode){
 function renderWeek(){
   const wk=S.sw,pos=curPos(),ph=wk==='maint'?{name:'שגרה קבועה',desc:'',w:[]}:getPhase(wk);
   const pt=progTotal(),pw=wk==='maint'?0:progWeek(wk);
-  let h=wk==='maint'?'':`<div class="prog-card">
+  let h=(wk==='maint'?'':`<div class="prog-card">
     <div class="prog-hdr"><span class="prog-title">📊 התקדמות</span><span class="prog-pct">${pt.pct}%</span></div>
     <div class="prog-bars">
       <div class="prog-row"><span class="prog-lbl">תוכנית</span><div class="prog-bg"><div class="prog-fill m" style="width:${pt.pct}%"></div></div><span class="prog-num">${pt.done}/${pt.total}</span></div>
       <div class="prog-row"><span class="prog-lbl">שבוע ${wk}</span><div class="prog-bg"><div class="prog-fill s" style="width:${pw}%"></div></div><span class="prog-num">${pw}%</span></div>
     </div>
-  </div>`
-  ${wk!=='maint'?`<div class="phase-banner">
+  </div>`)
+  +(wk!=='maint'?`<div class="phase-banner">
     <div><div class="phase-name">${ph.name}</div><div class="phase-desc">${ph.desc}</div></div>
     <div class="phase-weeks-badge">שבועות ${ph.w.join(', ')}</div>
   </div>`:`<div class="phase-banner">
-    <div><div class="phase-name">🌸 שגרה קבועה – ${S.maint==='w10'?'שלב 5':'שלב 6'}</div>
-    <div class="phase-desc">לחצי על יום לצפייה בשגרה המלאה</div></div>
+    <div><div class="phase-name">🌸 שגרת תחזוקה קבועה</div>
+    <div class="phase-desc">ממשיכה שבוע אחרי שבוע</div></div>
     <div class="maint-week-badge">⟳ שבוע-שבוע</div>
-  </div>`}
-  <div class="week-nav">
+  </div>`)
+  +`<div class="week-nav">
     <button class="nav-btn" onclick="chWk(-1)" ${wk==='maint'||wk<=1?'disabled':''}>‹ קודם</button>
     <span class="week-nav-title">${wk==='maint'?'שגרה קבועה':'שבוע '+wk}</span>
     <button class="nav-btn" onclick="${wk===12&&S.maint?'chWk(1)':wk==='maint'?'':''||'chWk(1)'}" ${wk!=='maint'&&wk>=12&&!S.maint?'disabled':''}>${wk==='maint'?'⟳ קבועה':'הבא ›'}</button>
