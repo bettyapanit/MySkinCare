@@ -9,7 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="שגרת טיפוח">
-<title>שגרת טיפוח | גלית 2026</title>
+<title>MySkinCare</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -304,8 +304,8 @@ body::before{content:'';position:fixed;inset:0;background:
 <body>
 <div class="wrap">
   <div class="hdr">
-    <div class="hdr-title">שגרת הטיפוח שלי 🌸</div>
-    <div class="hdr-sub">Galit · 12-Week Skincare Protocol · 2026</div>
+    <div class="hdr-title">MySkinCare 🌸</div>
+    
     <div class="hdr-line"></div>
   </div>
 
@@ -498,12 +498,10 @@ function render(){
   const m=document.getElementById('main');
   if(S.view==='week'){
     const p=curPos();
-    const afterW12=S.startDate&&!p&&(()=>{const t=new Date();t.setHours(0,0,0,0);const s=new Date(S.startDate);s.setHours(0,0,0,0);return Math.floor((t-s)/864e5)>=84;})();
-    const showMaint=afterW12||(p&&p.w==='maint');
+    const showMaint=(p&&p.w==='maint')||(S.sw==='maint');
     m.innerHTML=(showMaint?renderMaintBanner():'')+renderWeek();
   }
-  else if(S.view==='day')m.innerHTML=renderDay();
-  else m.innerHTML=renderComing();
+  else m.innerHTML=renderDay();
   bindDate();
 }
 function updateStatus(){
@@ -577,13 +575,13 @@ function renderWeek(){
     if(et.includes('Medicube'))badges+=`<div class="mbadge med">M</div>`;
     if(et.includes('חומצות'))badges+=`<div class="mbadge ac">A</div>`;
     if(hasNew)badges+=`<div class="mbadge new-wk">✦</div>`;
-    h+=`<div class="${cls}" onclick="selDay(${wk},${di})">
+    h+=`<div class="${cls}" onclick="selDay('${wk}',${di})">
       <div class="dcell-name">${DAY_SH[di]}</div>
       ${dStr?`<div class="dcell-date">${dStr}</div>`:''}
       
       <div class="dcell-type">${sm}</div>
       <div class="dcell-badges">${badges}</div>
-      <div class="dcell-chk" onclick="toggleDone(event,${wk},${di})">${done?'✓':''}</div>
+      <div class="dcell-chk" onclick="toggleDone(event,'${wk}',${di})">${done?'✓':''}</div>
     </div>`;
   }
   h+='</div>';
@@ -599,7 +597,7 @@ function chWk(d){
 function selDay(wk,di){S.selDay={w:wk==='maint'?'maint':wk,d:di};setView('day');}
 function toggleDone(e,wk,di){
   e.stopPropagation();
-  const effWk2=wk==='maint'?maintWk():wk;
+  const effWk2=wk==='maint'?'maint':parseInt(wk);
   const k=`w${effWk2}d${di}`;const both=S.dm[k]&&S.de[k];
   if(both){delete S.dm[k];delete S.de[k];}else{S.dm[k]=true;S.de[k]=true;}
   lsSave();render();
@@ -619,10 +617,9 @@ function renderDay(){
   const hasNew=!isMaintDay&&dayHasNew(wk,di);
   const mDone=!!S.dm[`w${wk}d${di}`],eDone=!!S.de[`w${wk}d${di}`];
 
-  let h=`<button class="back-btn" onclick="setView('week')">‹ תצוגה שבועית</button>
-  <div class="day-hdr">
+  let h=`<div class="day-hdr">
     <div class="day-hdr-row">
-      <div><div class="day-hdr-title">${DAY_HE[di]} · שבוע ${wk}</div><div class="day-hdr-sub">${dateStr}</div></div>
+      <div><div class="day-hdr-title">${isMaintDay?'יום '+DAY_HE[di]:DAY_HE[di]+' · שבוע '+wk}</div>${isMaintDay?'':`<div class="day-hdr-sub">${dateStr}</div>`}</div>
       ${isMaintDay?'': `<div style="text-align:center"><div style="font-size:.7rem;color:var(--txt-l)">התקדמות</div>
         <div style="font-family:'Playfair Display',serif;font-size:1.4rem;color:var(--m1)">${progDay(wk,di)}%</div></div>`}
     </div>
@@ -722,7 +719,7 @@ function buildSession(wk,di,sess,type,sessAllDone){
             ${(step.oil||step.p.includes('תערובת שמנים'))?`<button class="oil-btn" onclick="openOil()">🌿 נוסחת שמנים</button>`:''}
           </div>
         </div>
-        <div class="step-chk" onclick="toggleStep('${sk}','${sess}',${wk},${di})">${isDone?'✓':''}</div>
+        <div class="step-chk" onclick="toggleStep('${sk}','${sess}','${wk}',${di})">${isDone?'✓':''}</div>
       </div>
     </div>`;
 
@@ -758,6 +755,7 @@ function markSess(e,k,sess,count){
   lsSave();render();
 }
 function toggleStep(sk,sess,wk,di){
+  if(wk!=='maint')wk=parseInt(wk);
   const wasChecked=!!S.ds[sk];
   if(wasChecked) delete S.ds[sk]; else S.ds[sk]=true;
   const k=`w${wk}d${di}`;
@@ -806,49 +804,6 @@ function navDay(dir){
 }
 
 // ─── COMING VIEW ───
-function renderComing(){
-  const pos=curPos();let sw=pos?pos.w:1,sd=pos?pos.d:0;
-  let h=`<div class="sec-title">✨ 14 הימים הקרובים</div><div class="coming-list">`;
-  let w=sw,d=sd,cnt=0;
-  while(cnt<14&&w<=12){
-    const mt=dayTypeM(w,d),et=dayTypeE(w,d);
-    const date=dateFor(w,d);
-    const dStr=date?`${date.getDate()}/${date.getMonth()+1}`:`ש${w}י${d+1}`;
-    const dayName=date?date.toLocaleDateString('he-IL',{weekday:'short'}):DAY_SH[d];
-    const isToday=pos&&pos.w===w&&pos.d===d;
-    const hasNew=dayHasNew(w,d);
-    let tags='';
-    if(et.includes('Retinoit'))tags+=`<span class="ctag ret">Retinoit</span>`;
-    if(et.includes('Medicube'))tags+=`<span class="ctag med">Medicube</span>`;
-    if(et.includes('חומצות'))tags+=`<span class="ctag ac">חומצות</span>`;
-    if(hasNew)tags+=`<span class="ctag new-wk">✦ חדש</span>`;
-    if(isToday)tags+=`<span class="ctag today">◀ היום</span>`;
-    h+=`<div class="coming-item ${isToday?'today-ci':''}" onclick="selDay(${w},${d})">
-      <div class="cday"><div class="cday-name">${dayName}</div><div class="cday-num">${dStr}</div></div>
-      <div class="cinfo"><div class="cphase">${mt} · ${et}</div><div class="ctags">${tags}</div></div>
-      <span class="carr">›</span>
-    </div>`;
-    d++;if(d>6){d=0;w++;}cnt++;
-  }
-  h+=`</div>`;
-  // After week 12 – show maintenance prompt in coming view
-  const afterW12c=S.startDate&&(()=>{const t=new Date();t.setHours(0,0,0,0);const s=new Date(S.startDate);s.setHours(0,0,0,0);return Math.floor((t-s)/864e5)>=84;})();
-  if(afterW12c||S.maint)h+=renderMaintBanner();
-  h+=`<div class="sec-title">📍 לוח שלבים</div><div class="coming-list">`;
-  PHASES.forEach(ph=>{
-    const active=pos&&ph.w.includes(pos.w);
-    h+=`<div class="coming-item ${active?'today-ci':''}" onclick="goPhase(${ph.w[0]})">
-      <div class="cday"><div class="cday-name">ש׳</div><div class="cday-num">${ph.w.join('-')}</div></div>
-      <div class="cinfo">
-        <div class="cphase" style="font-weight:${active?700:400}">${ph.name}</div>
-        <div class="cphase" style="font-size:.7rem;margin-top:2px;color:var(--txt-l)">${ph.desc}</div>
-      </div>
-      ${active?'<span style="color:var(--m1);font-size:.75rem;font-weight:700">◀</span>':'<span class="carr">›</span>'}
-    </div>`;
-  });
-  h+='</div>';
-  return h;
-}
 function goPhase(wk){S.sw=wk;setView('week');}
 
 // ─── TIMER ───
